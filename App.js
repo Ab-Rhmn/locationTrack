@@ -3,9 +3,22 @@ import React, { useEffect, useState } from "react"
 import { StyleSheet, Text, View, Button } from "react-native"
 import * as TaskManager from "expo-task-manager"
 import * as Location from "expo-location"
+// import { initializeApp } from 'firebase/app'
+import { ref, set, update} from 'firebase/database';
+import {db} from './component/config';
+
+
+
 
 const LOCATION_TASK_NAME = "LOCATION_TASK_NAME"
 let foregroundSubscription = null
+let backPosition = null
+
+let updateLocation = (location) => {
+  update(ref(db, '/am/1'), { lat: location.latitude, long: location.longitude})
+  .then(() => console.log("Data successfully updated!"))
+  .catch((error) => console.error("Error updating data: ", error));
+};
 
 // Define the background task for location tracking
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
@@ -19,15 +32,29 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
     const location = locations[0]
     if (location) {
       console.log("Location in background", location.coords)
+      backPosition = location.coords;
+      updateLocation(location.coords)
+      // push to firebase 
+
     }
   }
 })
 
 export default function App() {
   // Define position state: {latitude: number, longitude: number}
-  const [position, setPosition] = useState(null)
+  const [position, setPosition] = useState(null);
   const [isBackgroundUpdateRunning, setIsBackgroundUpdateRunning] = useState(false);
   const [isForegroundUpdateRunning, setIsForegroundUpdateRunning] = useState(false);
+
+const storageHighScore =async(userId,score) =>{
+  set( ref(db,'/am/'),{username:"userId",highscore:"score"}).then(()=>console.log("aaaaaaaa")).catch(err=>console.log);
+  // update(ref(db, '/am/' + userId), { username: "userId", highscore: "score" })
+  // .then(() => console.log("Data successfully updated!"))
+  // .catch((error) => console.error("Error updating data: ", error));
+   
+}
+
+
 
   const toggleForegroundUpdate = () => {
     if (isForegroundUpdateRunning) {
@@ -77,6 +104,8 @@ export default function App() {
       },
       location => {
         setPosition(location.coords)
+        updateLocation(location.coords)
+        // push to firebase
       }
     )
   }
@@ -145,21 +174,12 @@ export default function App() {
       <View style={styles.separator} />
       <Button
         onPress={toggleForegroundUpdate}
+        // onPress={() => storageHighScore("1", 450)}
         title={isForegroundUpdateRunning ? "Stop in foreground" : "Start in foreground"}
         color={isForegroundUpdateRunning ? "red" : "green"}
       />
       <View style={styles.separator} />
-      {/* <Button
-        onPress={startBackgroundUpdate}
-        title="Start in background"
-        color="green"
-      />
-      <View style={styles.separator} />
-      <Button
-        onPress={stopBackgroundUpdate}
-        title="Stop in background"
-        color="red"
-      /> */}
+     
 
       <Button
         onPress={toggleBackgroundUpdate}
@@ -170,24 +190,7 @@ export default function App() {
   )
 }
 
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: "#fff",
-//     alignItems: "center",
-//     justifyContent: "center",
-//   },
-//   switchContainer: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//   },
-//   button: {
-//     marginTop: 15,
-//   },
-//   separator: {
-//     marginVertical: 8,
-//   },
-// })
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
