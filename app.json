@@ -18,13 +18,22 @@
       "supportsTablet": true
     },
     "android": {
+      "permissions": ["ACCESS_BACKGROUND_LOCATION"],
+      
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      
+      "package": "com.abdul978rahman.locationTracking"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e85566a2-a79e-4533-8d22-9bf96f31d321"
+      }
     }
   }
 }
