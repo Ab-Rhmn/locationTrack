@@ -1,11 +1,12 @@
 
 import React, { useEffect, useState } from "react"
-import { StyleSheet, Text, View, Button } from "react-native"
+import { StyleSheet, Text, View, Button,FlatList , TouchableOpacity, Modal} from "react-native"
 import * as TaskManager from "expo-task-manager"
 import * as Location from "expo-location"
 // import { initializeApp } from 'firebase/app'
 import { ref, set, update} from 'firebase/database';
 import {db} from './component/config';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 
 
@@ -31,7 +32,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
     const { locations } = data
     const location = locations[0]
     if (location) {
-      console.log("Location in background", location.coords)
+      console.log("Location in background", location)
       backPosition = location.coords;
       updateLocation(location.coords)
       // push to firebase 
@@ -40,11 +41,27 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
   }
 })
 
+// https://jsonplaceholder.typicode.com/todos/1
+
 export default function App() {
   // Define position state: {latitude: number, longitude: number}
   const [position, setPosition] = useState(null);
   const [isBackgroundUpdateRunning, setIsBackgroundUpdateRunning] = useState(false);
   const [isForegroundUpdateRunning, setIsForegroundUpdateRunning] = useState(false);
+  const [data, setData] = useState([]);
+  // const [data, setData] = useState([
+  //   { id: "1", title: "Tile 1", description: "Description for tile 1" },
+  //   { id: "2", title: "Tile 2", description: "Description for tile 2" },
+  //   { id: "3", title: "Tile 3", description: "Description for tile 3" },
+  // ]);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const handleTilePress = (item) => {
+    setSelectedItem(item);
+    setModalVisible(true);
+  };
+
 
 const storageHighScore =async(userId,score) =>{
   set( ref(db,'/am/'),{username:"userId",highscore:"score"}).then(()=>console.log("aaaaaaaa")).catch(err=>console.log);
@@ -81,7 +98,22 @@ const storageHighScore =async(userId,score) =>{
       if (foreground.granted) await Location.requestBackgroundPermissionsAsync()
     }
     requestPermissions()
+    fetchData();
   }, [])
+  const fetchData = async () => {
+    // Fetch data from API and update state
+    const response = await fetch('https://jsonplaceholder.typicode.com/todos/');
+    const json = await response.json();
+    setData(json);
+    console.log("ghghk", json)
+  };
+ 
+  const renderItem = ({ item }) => (
+    <View>
+      <Text>{item.userId}</Text>
+      <Text>{item.title}</Text>
+    </View>
+  );
 
   // Start location tracking in foreground
   const startForegroundUpdate = async () => {
@@ -166,10 +198,51 @@ const storageHighScore =async(userId,score) =>{
       console.log("Location tracking stopped")
     }
   }
+  const deleteItem = (itemId) => {
+    setData(prevData => prevData.filter(item => item.id !== itemId));
+  }
+  
 
   return (
+    
+    
     <View style={styles.container}>
-      {/* <Text>Longitude: {position?.longitude}</Text>
+          {/* <FlatList
+        data={data}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.tile}>
+            <Text style={styles.tileTitle}>{item.id}</Text>
+            <Text style={styles.tileText}>{item.title}</Text>
+          </View>
+        )}
+      /> */}
+
+<FlatList
+        data={data}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.tile} onPress={() => handleTilePress(item)}>
+            <Text style={styles.tileTitle}>{item.title}</Text>
+            {/* <Button title="Delete" onPress={() => deleteItem(item.id)} /> */}
+            <TouchableOpacity style={styles.deleteButton} onPress={() => handleTilePress(item)}>
+              <Icon name="trash" size={24} color="red" onPress={() => deleteItem(item.id)} />
+            </TouchableOpacity>
+          </TouchableOpacity>
+        )}
+      />
+      <Modal visible={modalVisible} animationType="slide">
+        <View style={styles.modal}>
+          <Text style={styles.title}>{selectedItem?.title}</Text>
+          <Text style={styles.userId}>{selectedItem?.userId}</Text>
+          <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+  
+
+        {/* <Text>Longitude: {position?.longitude}</Text>
       <Text>Latitude: {position?.latitude}</Text> */}
       <View style={styles.separator} />
       <Button
@@ -191,23 +264,99 @@ const storageHighScore =async(userId,score) =>{
 }
 
 
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: "#fff",
+//     alignItems: "center",
+//     justifyContent: "flex-end",
+//     marginBottom: 36, // add some margin to account for the device's bottom bar
+//   },
+//   tile: {
+//     borderWidth: 1,
+//     borderColor: "#ccc",
+//     padding: 10,
+//     margin: 10,
+//   },
+//   switchContainer: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//   },
+//   button: {
+//     marginTop: 15,
+//     marginLeft: 20, // add some margin to separate the two buttons
+//   },
+//   separator: {
+//     marginVertical: 8,
+//   },
+// })
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
     alignItems: "center",
-    justifyContent: "flex-end",
-    marginBottom: 36, // add some margin to account for the device's bottom bar
-  },
-  switchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  button: {
-    marginTop: 15,
-    marginLeft: 20, // add some margin to separate the two buttons
+    justifyContent: "flex-start",
+    paddingTop: 20,
+    paddingHorizontal: 20,
   },
   separator: {
-    marginVertical: 8,
+    height: 1,
+    backgroundColor: "#ccc",
+    marginVertical: 10,
+    width: "100%",
   },
-})
+  tile: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    marginBottom: 10,
+  },
+  tileTitle: {
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  tileText: {
+    fontSize: 14,
+    color: "#555",
+  },
+
+  modal: {
+    flex: 1,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  userId: {
+    fontSize: 16,
+    marginTop: 20,
+    textAlign: "center",
+  },
+  closeButton: {
+    backgroundColor: "#ff0000",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    marginTop: 20,
+  },
+  closeButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+  },
+});
+
