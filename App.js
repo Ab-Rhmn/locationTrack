@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react"
-import { StyleSheet, Text, View, Button,FlatList , TouchableOpacity, Modal} from "react-native"
+import { StyleSheet, Text, View, Button,FlatList , TouchableOpacity, Modal,Image, Dimensions} from "react-native"
 import * as TaskManager from "expo-task-manager"
 import * as Location from "expo-location"
 // import { initializeApp } from 'firebase/app'
@@ -9,7 +9,8 @@ import {db} from './component/config';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 
-
+const windowWidth = Dimensions.get('window').width;
+const windowHeight = Dimensions.get('window').height;
 
 const LOCATION_TASK_NAME = "LOCATION_TASK_NAME"
 let foregroundSubscription = null
@@ -104,7 +105,16 @@ const storageHighScore =async(userId,score) =>{
     // Fetch data from API and update state
     const response = await fetch('https://jsonplaceholder.typicode.com/todos/');
     const json = await response.json();
-    setData(json);
+    // setData(json);
+    // Modify each object in the array
+  const modifiedData = json.map(item => {
+    return {
+      ...item,
+      images: ['https://img.freepik.com/premium-photo/blue-premium-business-sedan-car-sports-configuration-white-background-3d-rendering_101266-26564.jpg','https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT8KpqGZztwXtgkUFZhQG081g6rUXfvsae_lW4d_TVf&s']
+    };
+  });
+  
+  setData(modifiedData);
     console.log("ghghk", json)
   };
  
@@ -207,16 +217,7 @@ const storageHighScore =async(userId,score) =>{
     
     
     <View style={styles.container}>
-          {/* <FlatList
-        data={data}
-        keyExtractor={item => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.tile}>
-            <Text style={styles.tileTitle}>{item.id}</Text>
-            <Text style={styles.tileText}>{item.title}</Text>
-          </View>
-        )}
-      /> */}
+     
 
 <FlatList
         data={data}
@@ -235,6 +236,15 @@ const storageHighScore =async(userId,score) =>{
         <View style={styles.modal}>
           <Text style={styles.title}>{selectedItem?.title}</Text>
           <Text style={styles.userId}>{selectedItem?.userId}</Text>
+          <FlatList
+          data={selectedItem?.images}
+          keyExtractor={(item, index) => index.toString()}
+          // horizontal={true}
+          renderItem={({ item }) => (
+            <Image source={{ uri: item }} style={styles.imageTile} />
+          )}
+        />
+
           <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
             <Text style={styles.closeButtonText}>Close</Text>
           </TouchableOpacity>
@@ -336,6 +346,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
   },
+  imageTile: {
+    width: windowWidth,
+    height: windowHeight / 2,
+    margin: 5,
+    resizeMode: 'contain',
+    borderRadius: 5,
+  },
   userId: {
     fontSize: 16,
     marginTop: 20,
@@ -358,5 +375,6 @@ const styles = StyleSheet.create({
     top: 8,
     right: 8,
   },
+ 
 });
 
